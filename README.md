@@ -1,0 +1,81 @@
+# Invoice + GST + Inventory System (India - Essential Oils)
+
+Lightweight web-based Invoice, Sales, Purchase and Inventory Management System using PHP (MVC), MySQL, HTML/CSS/JS.
+
+## Tech Stack
+- Frontend: HTML5, CSS3, Vanilla JavaScript
+- Backend: PHP 8+ (XAMPP compatible)
+- Database: MySQL
+- Architecture: Simple MVC (`config`, `controllers`, `models`, `views`, `assets`)
+
+## Features
+- Admin authentication with hashed password and session login/logout
+- Dashboard with monthly totals, profit, low stock, and monthly sales chart
+- Product management with GST rates (5/12/18), HSN, stock, reorder level
+- Supplier and customer master data
+- Purchase module with GST auto-calc and stock increment
+- Sales module with GST auto-calc, stock decrement, auto invoice number (`INV-0001`), print/PDF invoice
+- Inventory module with live stock, low stock alerts, valuation, product sales summary
+- Reports: sales, purchase, GST monthly summary, profit report
+- Supplier/customer edit and delete
+- Invoice logo upload from Settings (stored in DB-backed app settings)
+- CSV export for sales, purchases, GST, and profit reports
+- Smart reorder suggestions based on sales velocity, lead time, MOQ
+- Demand forecast (30/60/90 days)
+- Margin intelligence report per sale line
+- Batch/expiry tracking with FEFO visibility
+- Credit control with receivable ageing and payment posting
+- Supplier rate snapshots + purchase optimization view
+- Multi-price lists (retail/wholesale/distributor)
+- Multi-warehouse stock and warehouse transfer workflow
+- Returns and credit note flow with stock reversal
+- Approval workflow (pending/approved/rejected)
+- Audit trail for critical actions
+- Daily summary notification queue generator
+- GST compliance HSN export and e-invoice JSON draft output
+- Barcode/QR payload generator per SKU
+
+## Installation (XAMPP)
+1. Place project inside web root:
+   - `/Applications/XAMPP/xamppfiles/htdocs/billing`
+2. Start Apache + MySQL in XAMPP control panel.
+3. Create DB and tables:
+   - Open phpMyAdmin, import `/Applications/XAMPP/xamppfiles/htdocs/billing/sql/schema.sql`
+4. Update DB credentials if needed:
+   - `/Applications/XAMPP/xamppfiles/htdocs/billing/config/database.php`
+5. Open in browser:
+   - `http://localhost/billing/index.php`
+
+## Default Login
+- Username: `admin`
+- Password: `admin123`
+
+## Business Configuration
+Update business details used in invoice and GST state logic:
+- `/Applications/XAMPP/xamppfiles/htdocs/billing/config/app.php`
+
+Invoice logo management:
+- Open `Settings` from sidebar and upload logo image.
+
+Smart operations:
+- Open `Smart Ops` from sidebar.
+- Use the unified page to manage forecasting, reorder, returns, approvals, warehouse transfers, compliance exports, and e-invoice JSON.
+
+Important GST rule in system:
+- If business state equals party state: split GST into CGST and SGST.
+- If different states: apply IGST.
+
+## Folder Structure
+- `/Applications/XAMPP/xamppfiles/htdocs/billing/config`
+- `/Applications/XAMPP/xamppfiles/htdocs/billing/controllers`
+- `/Applications/XAMPP/xamppfiles/htdocs/billing/models`
+- `/Applications/XAMPP/xamppfiles/htdocs/billing/views`
+- `/Applications/XAMPP/xamppfiles/htdocs/billing/assets`
+- `/Applications/XAMPP/xamppfiles/htdocs/billing/sql`
+
+## Notes
+- Uses prepared statements through PDO.
+- Uses transactions for purchase/sale with stock updates.
+- PDF export is browser print-to-PDF from invoice screen.
+- CSV exports are available in Reports screen.
+- Additional compliance CSV is available in Smart Ops.

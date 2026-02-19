@@ -1,0 +1,81 @@
+<?php
+
+class Sale
+{
+    private PDO $db;
+
+    public function __construct()
+    {
+        $this->db = Database::connection();
+    }
+
+    public function all(): array
+    {
+        $sql = 'SELECT s.*, c.name AS customer_name FROM sales s JOIN customers c ON c.id = s.customer_id ORDER BY s.id DESC';
+        return $this->db->query($sql)->fetchAll();
+    }
+
+    public function findWithItems(int $id): ?array
+    {
+        $saleStmt = $this->db->prepare('SELECT s.*, c.name AS customer_name, c.gstin, c.state, c.phone, c.address FROM sales s JOIN customers c ON c.id = s.customer_id WHERE s.id=:id');
+        $saleStmt->execute(['id' => $id]);
+        $sale = $saleStmt->fetch();
+
+        if (!$sale) {
+            return null;
+        }
+
+        $itemStmt = $this->db->prepare('SELECT si.*, p.product_name, p.hsn_code FROM sale_items si JOIN products p ON p.id = si.product_id WHERE si.sale_id=:id');
+        $itemStmt->execute(['id' => $id]);
+        $sale['items'] = $itemStmt->fetchAll();
+
+        return $sale;
+    }
+
+    public function nextInvoiceNo(): string
+    {
+        $row = $this->db->query('SELECT invoice_no FROM sales ORDER BY id DESC LIMIT 1')->fetch();
+        if (!$row) {
+            return 'INV-0001';
+        }
+        $num = (int)substr($row['invoice_no'], 4) + 1;
+        return 'INV-' . str_pad((string)$num, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function create(array $header, array $items): int
+    {
+        // Keep invoice and stock mutations atomic.
+        $this->db->beginTransaction();
+
+        try {
+            $sql = 'INSERT INTO sales (invoice_no, customer_id, date, due_date, subtotal, cgst, sgst, igst, total_amount)
+                    VALUES (:invoice_no, :customer_id, :date, :due_date, :subtotal, :cgst, :sgst, :igst, :total_amount)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($header);
+
+            $saleId = (int)$this->db->lastInsertId();
+
+            $itemSql = 'INSERT INTO sale_items (sale_id, product_id, quantity, rate, gst_percent, tax_amount, total)
+                        VALUES (:sale_id, :product_id, :quantity, :rate, :gst_percent, :tax_amount, :total)';
+            $itemStmt = $this->db->prepare($itemSql);
+
+            $stockStmt = $this->db->prepare('UPDATE products SET stock_quantity = stock_quantity - :qty WHERE id = :id AND stock_quantity >= :qty');
+
+            foreach ($items as $item) {
+                $item['sale_id'] = $saleId;
+                $itemStmt->execute($item);
+
+                $stockStmt->execute(['qty' => $item['quantity'], 'id' => $item['product_id']]);
+                if ($stockStmt->rowCount() === 0) {
+                    throw new RuntimeException('Insufficient stock for product ID ' . $item['product_id']);
+                }
+            }
+
+            $this->db->commit();
+            return $saleId;
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+}
