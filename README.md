@@ -34,6 +34,17 @@ Lightweight web-based Invoice, Sales, Purchase and Inventory Management System u
 - Daily summary notification queue generator
 - GST compliance HSN export and e-invoice JSON draft output
 - Barcode/QR payload generator per SKU
+- User management with roles, permissions, activation, reset password, login history
+- Authentication improvements: login by email/username, forgot/reset password, force first-login password change, complexity rules
+- Centralized master data module (categories/sub-categories/brands/units/payment modes/expense categories/tax/warehouses)
+- Enhanced customer master (type, region, terms, credit limit, PAN, billing/shipping, active/inactive)
+- Enhanced supplier master (type, terms, bank details, active/inactive)
+- Finance module: payment received/made, partial payment support, bank account + UPI/QR setup
+- Sales enhancements: draft/final/cancel status, lock after final, discounts, round-off, notes/terms, payment status
+- Purchase enhancements: draft/final, transport/other charges
+- Customer/Supplier dashboard and ledger views
+- Dashboard improvements: today sales, monthly revenue, receivables, payables, low stock, top products
+- Delete vs deactivate rule support (draft invoice deletion restricted)
 
 ## Installation (XAMPP)
 1. Place project inside web root:
@@ -45,6 +56,9 @@ Lightweight web-based Invoice, Sales, Purchase and Inventory Management System u
    - `/Applications/XAMPP/xamppfiles/htdocs/billing/config/database.php`
 5. Open in browser:
    - `http://localhost/billing/index.php`
+
+On first run, the app auto-creates/updates additional tables and columns using:
+- `/Applications/XAMPP/xamppfiles/htdocs/billing/models/SystemSetup.php`
 
 ## Default Login
 - Username: `admin`

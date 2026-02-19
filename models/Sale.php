@@ -48,15 +48,15 @@ class Sale
         $this->db->beginTransaction();
 
         try {
-            $sql = 'INSERT INTO sales (invoice_no, customer_id, date, due_date, subtotal, cgst, sgst, igst, total_amount)
-                    VALUES (:invoice_no, :customer_id, :date, :due_date, :subtotal, :cgst, :sgst, :igst, :total_amount)';
+            $sql = 'INSERT INTO sales (invoice_no, customer_id, date, due_date, subtotal, cgst, sgst, igst, total_amount, status, is_locked, item_discount, overall_discount, round_off, notes, terms, payment_status)
+                    VALUES (:invoice_no, :customer_id, :date, :due_date, :subtotal, :cgst, :sgst, :igst, :total_amount, :status, :is_locked, :item_discount, :overall_discount, :round_off, :notes, :terms, :payment_status)';
             $stmt = $this->db->prepare($sql);
             $stmt->execute($header);
 
             $saleId = (int)$this->db->lastInsertId();
 
-            $itemSql = 'INSERT INTO sale_items (sale_id, product_id, quantity, rate, gst_percent, tax_amount, total)
-                        VALUES (:sale_id, :product_id, :quantity, :rate, :gst_percent, :tax_amount, :total)';
+            $itemSql = 'INSERT INTO sale_items (sale_id, product_id, quantity, rate, gst_percent, tax_amount, total, discount_amount)
+                        VALUES (:sale_id, :product_id, :quantity, :rate, :gst_percent, :tax_amount, :total, :discount_amount)';
             $itemStmt = $this->db->prepare($itemSql);
 
             $stockStmt = $this->db->prepare('UPDATE products SET stock_quantity = stock_quantity - :qty WHERE id = :id AND stock_quantity >= :qty');
@@ -77,5 +77,33 @@ class Sale
             $this->db->rollBack();
             throw $e;
         }
+    }
+
+    public function setStatus(int $id, string $status): void
+    {
+        $isLocked = strtoupper($status) === 'FINAL' ? 1 : 0;
+        $stmt = $this->db->prepare('UPDATE sales SET status = :s, is_locked = :l WHERE id = :id');
+        $stmt->execute(['s' => $status, 'l' => $isLocked, 'id' => $id]);
+    }
+
+    public function deleteIfUnpaidAndAllowedStatus(int $id): bool
+    {
+        $stmt = $this->db->prepare('SELECT status FROM sales WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+        $status = strtoupper(trim((string)($row['status'] ?? '')));
+        if (!$row || !in_array($status, ['DRAFT', 'CANCELLED', 'VOID'], true)) {
+            return false;
+        }
+
+        $paid = $this->db->prepare('SELECT COALESCE(SUM(amount),0) AS paid FROM customer_payments WHERE sale_id = :id');
+        $paid->execute(['id' => $id]);
+        if ((float)$paid->fetch()['paid'] > 0) {
+            return false;
+        }
+
+        $del = $this->db->prepare('DELETE FROM sales WHERE id = :id');
+        $del->execute(['id' => $id]);
+        return $del->rowCount() > 0;
     }
 }

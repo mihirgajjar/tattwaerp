@@ -68,6 +68,32 @@ function audit_log(string $action, string $entity, int $entityId = 0, array $met
     }
 }
 
+function validate_password_policy(string $password): ?string
+{
+    if (strlen($password) < 8) {
+        return 'Password must be at least 8 characters.';
+    }
+    if (!preg_match('/[A-Z]/', $password)) {
+        return 'Password must include at least one uppercase letter.';
+    }
+    if (!preg_match('/[a-z]/', $password)) {
+        return 'Password must include at least one lowercase letter.';
+    }
+    if (!preg_match('/[0-9]/', $password)) {
+        return 'Password must include at least one digit.';
+    }
+    if (!preg_match('/[^a-zA-Z0-9]/', $password)) {
+        return 'Password must include at least one special character.';
+    }
+
+    return null;
+}
+
+function current_ip(): string
+{
+    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+}
+
 function number_to_words_indian(float $amount): string
 {
     if (!class_exists('NumberFormatter')) {

@@ -31,4 +31,13 @@ class Controller
             redirect('auth/login');
         }
     }
+
+    protected function requirePermission(string $permission, string $action = 'read'): void
+    {
+        $this->requireAuth();
+        if (!Auth::can($permission, $action)) {
+            flash('error', 'Access denied for this action.');
+            redirect('dashboard/index');
+        }
+    }
 }

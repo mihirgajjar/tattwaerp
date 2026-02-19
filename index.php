@@ -22,8 +22,25 @@ spl_autoload_register(function ($class) {
     }
 });
 
+try {
+    (new SystemSetup())->ensure();
+} catch (Throwable $e) {
+    // Keep app available even if migration step partially fails.
+}
+
 $route = $_GET['route'] ?? 'dashboard/index';
 [$controllerName, $action] = array_pad(explode('/', $route), 2, 'index');
+
+try {
+    $requestKeys = array_values(array_filter(array_keys($_REQUEST), static fn($k) => !in_array($k, ['password', 'current_password', 'new_password', 'confirm_password'], true)));
+    audit_log('request', 'route', 0, [
+        'route' => $route,
+        'method' => $_SERVER['REQUEST_METHOD'] ?? 'GET',
+        'keys' => $requestKeys,
+    ]);
+} catch (Throwable $e) {
+    // Ignore logging failures.
+}
 
 $controllerClass = ucfirst($controllerName) . 'Controller';
 

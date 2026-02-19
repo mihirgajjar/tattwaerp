@@ -4,7 +4,7 @@ class InventoryController extends Controller
 {
     public function index(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('inventory', 'read');
         $model = new Product();
 
         $this->view('inventory/index', [

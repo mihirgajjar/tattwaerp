@@ -25,8 +25,18 @@ $currentRoute = $_GET['route'] ?? 'dashboard/index';
             <a class="<?= str_starts_with($currentRoute, 'sale/') ? 'active' : '' ?>" href="index.php?route=sale/index">Sales</a>
             <a class="<?= str_starts_with($currentRoute, 'inventory/') ? 'active' : '' ?>" href="index.php?route=inventory/index">Inventory</a>
             <a class="<?= str_starts_with($currentRoute, 'report/') ? 'active' : '' ?>" href="index.php?route=report/index">Reports</a>
+            <?php if (Auth::can('master_edit', 'read')): ?>
+                <a class="<?= str_starts_with($currentRoute, 'master/') ? 'active' : '' ?>" href="index.php?route=master/index">Masters</a>
+            <?php endif; ?>
+            <?php if (Auth::can('financial_report_view', 'read')): ?>
+                <a class="<?= str_starts_with($currentRoute, 'finance/') ? 'active' : '' ?>" href="index.php?route=finance/index">Finance</a>
+            <?php endif; ?>
+            <?php if (Auth::can('user_manage', 'read')): ?>
+                <a class="<?= str_starts_with($currentRoute, 'user/') ? 'active' : '' ?>" href="index.php?route=user/index">Users</a>
+            <?php endif; ?>
             <a class="<?= str_starts_with($currentRoute, 'smart/') ? 'active' : '' ?>" href="index.php?route=smart/index">Smart Ops</a>
             <a class="<?= str_starts_with($currentRoute, 'setting/') ? 'active' : '' ?>" href="index.php?route=setting/index">Settings</a>
+            <a class="<?= str_starts_with($currentRoute, 'auth/changePassword') ? 'active' : '' ?>" href="index.php?route=auth/changePassword">Change Password</a>
             <a href="index.php?route=auth/logout">Logout (<?= e($user['username'] ?? 'admin') ?>)</a>
         </nav>
     </aside>

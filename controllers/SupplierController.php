@@ -4,21 +4,25 @@ class SupplierController extends Controller
 {
     public function index(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('master_edit', 'read');
         $model = new Partner();
 
         $editId = (int)$this->request('edit_id', 0);
         $editing = $editId > 0 ? $model->find('suppliers', $editId) : null;
+        $q = trim((string)$this->request('q', ''));
+        $status = trim((string)$this->request('status', 'all'));
 
         $this->view('partners/suppliers', [
-            'suppliers' => $model->all('suppliers'),
+            'suppliers' => $model->all('suppliers', $q, $status),
             'editing' => $editing,
+            'q' => $q,
+            'status' => $status,
         ]);
     }
 
     public function create(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('master_edit', 'write');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             redirect('supplier/index');
         }
@@ -37,7 +41,7 @@ class SupplierController extends Controller
 
     public function update(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('master_edit', 'write');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             redirect('supplier/index');
         }
@@ -62,7 +66,7 @@ class SupplierController extends Controller
 
     public function delete(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('master_edit', 'delete');
         $id = (int)$this->request('id', 0);
 
         if ($id <= 0) {
@@ -81,6 +85,26 @@ class SupplierController extends Controller
         redirect('supplier/index');
     }
 
+    public function dashboard(): void
+    {
+        $this->requirePermission('reports', 'read');
+        $id = (int)$this->request('id', 0);
+        $model = new Partner();
+        $supplier = $model->find('suppliers', $id);
+        if (!$supplier) {
+            flash('error', 'Supplier not found.');
+            redirect('supplier/index');
+        }
+
+        $data = $model->supplierDashboard($id);
+        $this->view('partners/supplier_dashboard', [
+            'supplier' => $supplier,
+            'summary' => $data['summary'],
+            'outstanding' => $data['outstanding'],
+            'transactions' => $data['transactions'],
+        ]);
+    }
+
     private function validatedData(): ?array
     {
         $data = [
@@ -89,6 +113,10 @@ class SupplierController extends Controller
             'state' => trim((string)$this->request('state', '')),
             'phone' => trim((string)$this->request('phone', '')),
             'address' => trim((string)$this->request('address', '')),
+            'supplier_type' => trim((string)$this->request('supplier_type', 'General')),
+            'bank_details' => trim((string)$this->request('bank_details', '')),
+            'payment_terms' => trim((string)$this->request('payment_terms', '')),
+            'is_active' => (int)$this->request('is_active', 1) === 1 ? 1 : 0,
         ];
 
         if ($data['name'] === '' || $data['state'] === '') {

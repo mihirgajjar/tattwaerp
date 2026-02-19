@@ -4,16 +4,23 @@ class SettingController extends Controller
 {
     public function index(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('master_edit', 'write');
         $model = new AppSetting();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->uploadLogo($model);
+            $action = (string)$this->request('action', 'upload_logo');
+            if ($action === 'save_invoice_theme') {
+                $this->saveInvoiceTheme($model);
+            } else {
+                $this->uploadLogo($model);
+            }
             redirect('setting/index');
         }
 
         $this->view('settings/index', [
             'logoPath' => $model->get('invoice_logo', ''),
+            'invoiceTheme' => $model->get('invoice_theme', 'classic'),
+            'invoiceAccentColor' => $model->get('invoice_accent_color', '#1d6f5f'),
         ]);
     }
 
@@ -92,5 +99,27 @@ class SettingController extends Controller
         $model->set('invoice_logo', $relativePath);
         audit_log('update_invoice_logo', 'app_setting', 0, ['path' => $relativePath]);
         flash('success', 'Invoice logo updated.');
+    }
+
+    private function saveInvoiceTheme(AppSetting $model): void
+    {
+        $theme = strtolower(trim((string)$this->request('invoice_theme', 'classic')));
+        $accent = trim((string)$this->request('invoice_accent_color', '#1d6f5f'));
+        $allowedThemes = ['classic', 'minimal', 'premium'];
+
+        if (!in_array($theme, $allowedThemes, true)) {
+            flash('error', 'Invalid theme selected.');
+            return;
+        }
+
+        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $accent)) {
+            flash('error', 'Accent color must be a valid hex color (e.g., #1d6f5f).');
+            return;
+        }
+
+        $model->set('invoice_theme', $theme);
+        $model->set('invoice_accent_color', $accent);
+        audit_log('update_invoice_theme', 'app_setting', 0, ['theme' => $theme, 'accent' => $accent]);
+        flash('success', 'Invoice theme settings updated.');
     }
 }

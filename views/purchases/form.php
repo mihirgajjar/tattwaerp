@@ -3,6 +3,12 @@
     <div class="grid three">
         <label>Purchase Invoice No<input type="text" name="purchase_invoice_no" value="<?= e($invoiceNo) ?>" readonly></label>
         <label>Date<input type="date" name="date" value="<?= date('Y-m-d') ?>" required></label>
+        <label>Status
+            <select name="status">
+                <option value="DRAFT">Draft</option>
+                <option value="FINAL" selected>Final</option>
+            </select>
+        </label>
         <label>Supplier
             <select name="supplier_id" id="partySelect" data-party-kind="supplier" required>
                 <option value="">Select</option>
@@ -27,6 +33,10 @@
         <p>SGST: <strong id="sgst">0.00</strong></p>
         <p>IGST: <strong id="igst">0.00</strong></p>
         <p>Grand Total: <strong id="grandTotal">0.00</strong></p>
+    </div>
+    <div class="grid two">
+        <label>Transport Cost<input type="number" step="0.01" name="transport_cost" value="0"></label>
+        <label>Other Charges<input type="number" step="0.01" name="other_charges" value="0"></label>
     </div>
     <button type="submit">Save Purchase</button>
 </form>

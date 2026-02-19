@@ -4,15 +4,16 @@ class ProductController extends Controller
 {
     public function index(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('inventory', 'read');
         $model = new Product();
         $this->view('products/index', ['products' => $model->all()]);
     }
 
     public function create(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('inventory', 'write');
         $model = new Product();
+        $categoryOptions = $this->categoryOptions();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $this->validatedData();
@@ -26,13 +27,14 @@ class ProductController extends Controller
             redirect('product/create');
         }
 
-        $this->view('products/form', ['action' => 'create', 'product' => null]);
+        $this->view('products/form', ['action' => 'create', 'product' => null, 'categoryOptions' => $categoryOptions]);
     }
 
     public function edit(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('inventory', 'write');
         $model = new Product();
+        $categoryOptions = $this->categoryOptions();
         $id = (int)$this->request('id', 0);
         $product = $model->find($id);
 
@@ -53,12 +55,12 @@ class ProductController extends Controller
             redirect('product/edit&id=' . $id);
         }
 
-        $this->view('products/form', ['action' => 'edit&id=' . $id, 'product' => $product]);
+        $this->view('products/form', ['action' => 'edit&id=' . $id, 'product' => $product, 'categoryOptions' => $categoryOptions]);
     }
 
     public function delete(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('inventory', 'delete');
         $id = (int)$this->request('id', 0);
         if ($id > 0) {
             (new Product())->delete($id);
@@ -82,6 +84,11 @@ class ProductController extends Controller
             'selling_price' => (float)$this->request('selling_price', 0),
             'stock_quantity' => (int)$this->request('stock_quantity', 0),
             'reorder_level' => (int)$this->request('reorder_level', 0),
+            'reserved_stock' => (int)$this->request('reserved_stock', 0),
+            'min_stock_level' => (int)$this->request('min_stock_level', 0),
+            'barcode' => trim((string)$this->request('barcode', '')),
+            'image_path' => trim((string)$this->request('existing_image_path', '')),
+            'is_active' => (int)$this->request('is_active', 1) === 1 ? 1 : 0,
         ];
 
         set_old($data);
@@ -96,6 +103,33 @@ class ProductController extends Controller
             return null;
         }
 
+        if (!empty($_FILES['image']['tmp_name'])) {
+            $destDir = __DIR__ . '/../assets/uploads';
+            if (!is_dir($destDir)) {
+                @mkdir($destDir, 0775, true);
+            }
+            $filename = 'product_' . time() . '_' . mt_rand(100, 999) . '.png';
+            $target = $destDir . '/' . $filename;
+            if (move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
+                $data['image_path'] = 'assets/uploads/' . $filename;
+            }
+        }
+
         return $data;
+    }
+
+    private function categoryOptions(): array
+    {
+        try {
+            $rows = (new Master())->list('product_categories', '', 'active');
+            $names = array_values(array_filter(array_map(static fn($r) => trim((string)($r['name'] ?? '')), $rows)));
+            if (!empty($names)) {
+                return $names;
+            }
+        } catch (Throwable $e) {
+            // fallback below
+        }
+
+        return ['Single Oil', 'Blend', 'Diffuser Oil'];
     }
 }

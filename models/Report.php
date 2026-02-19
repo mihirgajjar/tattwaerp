@@ -18,7 +18,7 @@ class Report
 
     public function purchases(string $from, string $to): array
     {
-        $stmt = $this->db->prepare('SELECT p.*, s.name AS supplier_name FROM purchases p JOIN suppliers s ON s.id = p.supplier_id WHERE p.date BETWEEN :from AND :to ORDER BY p.date DESC');
+        $stmt = $this->db->prepare('SELECT p.*, s.name AS supplier_name FROM purchases p JOIN suppliers s ON s.id = p.supplier_id WHERE p.date BETWEEN :from AND :to AND p.status = \'FINAL\' ORDER BY p.date DESC');
         $stmt->execute(['from' => $from, 'to' => $to]);
         return $stmt->fetchAll();
     }
@@ -39,7 +39,7 @@ class Report
                 COALESCE(SUM(sgst),0) AS sgst,
                 COALESCE(SUM(igst),0) AS igst
             FROM purchases
-            WHERE DATE_FORMAT(date, '%Y-%m') = :ym");
+            WHERE DATE_FORMAT(date, '%Y-%m') = :ym AND status = 'FINAL'");
         $stmt->execute(['ym' => $yearMonth]);
         return $stmt->fetchAll();
     }
@@ -50,7 +50,7 @@ class Report
         $salesStmt->execute(['from' => $from, 'to' => $to]);
         $sales = (float)$salesStmt->fetch()['total'];
 
-        $purchaseStmt = $this->db->prepare('SELECT COALESCE(SUM(total_amount),0) AS total FROM purchases WHERE date BETWEEN :from AND :to');
+        $purchaseStmt = $this->db->prepare('SELECT COALESCE(SUM(total_amount),0) AS total FROM purchases WHERE date BETWEEN :from AND :to AND status = \'FINAL\'');
         $purchaseStmt->execute(['from' => $from, 'to' => $to]);
         $purchases = (float)$purchaseStmt->fetch()['total'];
 

@@ -4,7 +4,7 @@ class ReportController extends Controller
 {
     public function index(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('reports', 'read');
         $model = new Report();
 
         $from = (string)$this->request('from', date('Y-m-01'));
@@ -24,7 +24,7 @@ class ReportController extends Controller
 
     public function export(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('reports', 'read');
         $type = (string)$this->request('type', '');
         $from = (string)$this->request('from', date('Y-m-01'));
         $to = (string)$this->request('to', date('Y-m-t'));

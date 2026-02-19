@@ -1,9 +1,9 @@
 <?php
-$categories = ['Single Oil', 'Blend', 'Diffuser Oil'];
+$categories = $categoryOptions ?? ['Single Oil', 'Blend', 'Diffuser Oil'];
 $product = $product ?? [];
 ?>
 <h2><?= $product ? 'Edit Product' : 'Add Product' ?></h2>
-<form method="post" class="card form-grid" action="index.php?route=product/<?= e($action) ?>">
+<form method="post" enctype="multipart/form-data" class="card form-grid" action="index.php?route=product/<?= e($action) ?>">
     <label>Product Name<input type="text" name="product_name" value="<?= e(old('product_name', $product['product_name'] ?? '')) ?>" required></label>
     <label>SKU<input type="text" name="sku" value="<?= e(old('sku', $product['sku'] ?? '')) ?>" required></label>
     <label>Category
@@ -27,5 +27,19 @@ $product = $product ?? [];
     <label>Selling Price<input type="number" step="0.01" name="selling_price" value="<?= e(old('selling_price', (string)($product['selling_price'] ?? '0'))) ?>" required></label>
     <label>Stock Quantity<input type="number" name="stock_quantity" value="<?= e(old('stock_quantity', (string)($product['stock_quantity'] ?? '0'))) ?>" required></label>
     <label>Reorder Level<input type="number" name="reorder_level" value="<?= e(old('reorder_level', (string)($product['reorder_level'] ?? '0'))) ?>" required></label>
+    <label>Reserved Stock<input type="number" name="reserved_stock" value="<?= e(old('reserved_stock', (string)($product['reserved_stock'] ?? '0'))) ?>"></label>
+    <label>Minimum Stock Level<input type="number" name="min_stock_level" value="<?= e(old('min_stock_level', (string)($product['min_stock_level'] ?? '0'))) ?>"></label>
+    <label>Barcode<input type="text" name="barcode" value="<?= e(old('barcode', (string)($product['barcode'] ?? ''))) ?>"></label>
+    <label>Status
+        <select name="is_active">
+            <option value="1" <?= (int)old('is_active', (string)($product['is_active'] ?? 1)) === 1 ? 'selected' : '' ?>>Active</option>
+            <option value="0" <?= (int)old('is_active', (string)($product['is_active'] ?? 1)) === 0 ? 'selected' : '' ?>>Inactive</option>
+        </select>
+    </label>
+    <input type="hidden" name="existing_image_path" value="<?= e($product['image_path'] ?? '') ?>">
+    <label>Product Image<input type="file" name="image" accept="image/*"></label>
+    <?php if (!empty($product['image_path'])): ?>
+        <div><img src="<?= e($product['image_path']) ?>" alt="Product" class="invoice-logo-preview"></div>
+    <?php endif; ?>
     <button type="submit">Save Product</button>
 </form>

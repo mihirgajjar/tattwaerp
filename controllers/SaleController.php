@@ -4,14 +4,14 @@ class SaleController extends Controller
 {
     public function index(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('billing', 'read');
         $model = new Sale();
         $this->view('sales/index', ['sales' => $model->all()]);
     }
 
     public function create(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('billing', 'write');
         $saleModel = new Sale();
         $partnerModel = new Partner();
         $productModel = new Product();
@@ -37,9 +37,35 @@ class SaleController extends Controller
         ]);
     }
 
+    public function status(): void
+    {
+        $this->requirePermission('billing', 'write');
+        $id = (int)$this->request('id', 0);
+        $status = strtoupper(trim((string)$this->request('status', 'DRAFT')));
+        if ($id > 0 && in_array($status, ['DRAFT', 'FINAL', 'CANCELLED', 'VOID'], true)) {
+            (new Sale())->setStatus($id, $status);
+            audit_log('sale_status', 'sale', $id, ['status' => $status]);
+            flash('success', 'Sale status updated.');
+        }
+        redirect('sale/index');
+    }
+
+    public function delete(): void
+    {
+        $this->requirePermission('invoice_delete', 'delete');
+        $id = (int)$this->request('id', 0);
+        if ($id > 0 && (new Sale())->deleteIfUnpaidAndAllowedStatus($id)) {
+            audit_log('delete_sale', 'sale', $id);
+            flash('success', 'Invoice deleted.');
+        } else {
+            flash('error', 'Delete allowed only for draft/cancelled/void invoices with no payment.');
+        }
+        redirect('sale/index');
+    }
+
     public function invoice(): void
     {
-        $this->requireAuth();
+        $this->requirePermission('billing', 'read');
         $id = (int)$this->request('id', 0);
         $sale = (new Sale())->findWithItems($id);
 
@@ -51,8 +77,24 @@ class SaleController extends Controller
         $this->view('sales/invoice', [
             'sale' => $sale,
             'app' => config('app'),
+            'defaultBank' => $this->defaultBank(),
             'totalWords' => number_to_words_indian((float)$sale['total_amount']),
         ], false);
+    }
+
+    private function defaultBank(): ?array
+    {
+        try {
+            $banks = (new Finance())->banks();
+            foreach ($banks as $b) {
+                if ((int)$b['is_default'] === 1) {
+                    return $b;
+                }
+            }
+            return $banks[0] ?? null;
+        } catch (Throwable $e) {
+            return null;
+        }
     }
 
     private function buildTransactionData(): array
@@ -61,6 +103,12 @@ class SaleController extends Controller
         $date = (string)$this->request('date', date('Y-m-d'));
         $dueDate = (string)$this->request('due_date', date('Y-m-d', strtotime('+15 days')));
         $invoiceNo = trim((string)$this->request('invoice_no', ''));
+        $status = strtoupper(trim((string)$this->request('status', 'FINAL')));
+        $itemDiscount = (float)$this->request('item_discount', 0);
+        $overallDiscount = (float)$this->request('overall_discount', 0);
+        $roundOff = (float)$this->request('round_off', 0);
+        $notes = trim((string)$this->request('notes', ''));
+        $terms = trim((string)$this->request('terms', ''));
 
         $productIds = $_POST['product_id'] ?? [];
         $quantities = $_POST['quantity'] ?? [];
@@ -89,7 +137,8 @@ class SaleController extends Controller
                 throw new RuntimeException('Invalid GST rate selected.');
             }
 
-            $taxable = $qty * $rate;
+            $lineDiscount = max(0.0, (float)$this->request('line_discount_' . $i, 0));
+            $taxable = max(0.0, ($qty * $rate) - $lineDiscount);
             $taxAmount = $taxable * ($gstPercent / 100);
             $lineTotal = $taxable + $taxAmount;
 
@@ -110,19 +159,31 @@ class SaleController extends Controller
                 'gst_percent' => $gstPercent,
                 'tax_amount' => $taxAmount,
                 'total' => $lineTotal,
+                'discount_amount' => $lineDiscount,
             ];
         }
+
+        $discountedSubtotal = max(0.0, $subtotal - $itemDiscount - $overallDiscount);
+        $grand = $discountedSubtotal + $cgst + $sgst + $igst + $roundOff;
 
         $header = [
             'invoice_no' => $invoiceNo,
             'customer_id' => $customerId,
             'date' => $date,
             'due_date' => $dueDate,
-            'subtotal' => round($subtotal, 2),
+            'subtotal' => round($discountedSubtotal, 2),
             'cgst' => round($cgst, 2),
             'sgst' => round($sgst, 2),
             'igst' => round($igst, 2),
-            'total_amount' => round($subtotal + $cgst + $sgst + $igst, 2),
+            'total_amount' => round($grand, 2),
+            'status' => $status,
+            'is_locked' => $status === 'FINAL' ? 1 : 0,
+            'item_discount' => round($itemDiscount, 2),
+            'overall_discount' => round($overallDiscount, 2),
+            'round_off' => round($roundOff, 2),
+            'notes' => $notes,
+            'terms' => $terms,
+            'payment_status' => 'UNPAID',
         ];
 
         return [$header, $items];

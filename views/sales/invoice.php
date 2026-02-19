@@ -6,7 +6,11 @@
     <title>Invoice <?= e($sale['invoice_no']) ?></title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body class="invoice-body">
+<?php
+$invoiceTheme = app_setting('invoice_theme', 'classic');
+$invoiceAccent = app_setting('invoice_accent_color', '#1d6f5f');
+?>
+<body class="invoice-body invoice-theme-<?= e($invoiceTheme) ?>" style="--invoice-accent: <?= e($invoiceAccent) ?>;">
 <div class="invoice-actions no-print">
     <a class="btn" href="index.php?route=sale/index">Back</a>
     <button class="btn" onclick="window.print()">Export / Print PDF</button>
@@ -56,13 +60,39 @@
 
     <table class="tax-breakup">
         <tr><th>Taxable Value</th><td><?= number_format((float)$sale['subtotal'], 2) ?></td></tr>
+        <tr><th>Item Discount</th><td><?= number_format((float)($sale['item_discount'] ?? 0), 2) ?></td></tr>
+        <tr><th>Overall Discount</th><td><?= number_format((float)($sale['overall_discount'] ?? 0), 2) ?></td></tr>
         <tr><th>CGST</th><td><?= number_format((float)$sale['cgst'], 2) ?></td></tr>
         <tr><th>SGST</th><td><?= number_format((float)$sale['sgst'], 2) ?></td></tr>
         <tr><th>IGST</th><td><?= number_format((float)$sale['igst'], 2) ?></td></tr>
-        <tr><th>Grand Total</th><td><?= number_format((float)$sale['total_amount'], 2) ?></td></tr>
+        <tr><th>Round Off</th><td><?= number_format((float)($sale['round_off'] ?? 0), 2) ?></td></tr>
+        <tr><th>Grand Total</th><td><strong><?= number_format((float)$sale['total_amount'], 2) ?></strong></td></tr>
+        <tr><th>Payment Status</th><td><?= e($sale['payment_status'] ?? 'UNPAID') ?></td></tr>
     </table>
 
     <p><strong>Total in words:</strong> <?= e($totalWords) ?></p>
+    <?php if (!empty($sale['notes'])): ?><p><strong>Notes:</strong> <?= e($sale['notes']) ?></p><?php endif; ?>
+    <?php if (!empty($sale['terms'])): ?><p><strong>Terms:</strong> <?= e($sale['terms']) ?></p><?php endif; ?>
+
+    <?php if (!empty($defaultBank)): ?>
+        <hr>
+        <div class="grid two">
+            <div>
+                <h3>Bank Details</h3>
+                <p><strong>Bank:</strong> <?= e($defaultBank['bank_name']) ?></p>
+                <p><strong>A/C Name:</strong> <?= e($defaultBank['account_name']) ?></p>
+                <p><strong>A/C No:</strong> <?= e($defaultBank['account_no']) ?></p>
+                <p><strong>IFSC:</strong> <?= e($defaultBank['ifsc']) ?></p>
+                <p><strong>UPI:</strong> <?= e($defaultBank['upi_id']) ?></p>
+            </div>
+            <div>
+                <h3>Pay via QR</h3>
+                <?php if (!empty($defaultBank['qr_image_path'])): ?>
+                    <img src="<?= e($defaultBank['qr_image_path']) ?>" alt="UPI QR" class="invoice-logo-preview">
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 </div>
 </body>
 </html>

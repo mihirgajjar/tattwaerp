@@ -25,8 +25,8 @@ class Product
 
     public function create(array $data): void
     {
-        $sql = 'INSERT INTO products (product_name, sku, category, variant, size, hsn_code, gst_percent, purchase_price, selling_price, stock_quantity, reorder_level, created_at)
-                VALUES (:product_name, :sku, :category, :variant, :size, :hsn_code, :gst_percent, :purchase_price, :selling_price, :stock_quantity, :reorder_level, NOW())';
+        $sql = 'INSERT INTO products (product_name, sku, category, variant, size, hsn_code, gst_percent, purchase_price, selling_price, stock_quantity, reorder_level, reserved_stock, min_stock_level, barcode, image_path, is_active, created_at)
+                VALUES (:product_name, :sku, :category, :variant, :size, :hsn_code, :gst_percent, :purchase_price, :selling_price, :stock_quantity, :reorder_level, :reserved_stock, :min_stock_level, :barcode, :image_path, :is_active, NOW())';
         $stmt = $this->db->prepare($sql);
         $stmt->execute($data);
     }
@@ -36,7 +36,8 @@ class Product
         $data['id'] = $id;
         $sql = 'UPDATE products SET product_name=:product_name, sku=:sku, category=:category, variant=:variant, size=:size, hsn_code=:hsn_code,
                 gst_percent=:gst_percent, purchase_price=:purchase_price, selling_price=:selling_price, stock_quantity=:stock_quantity,
-                reorder_level=:reorder_level WHERE id=:id';
+                reorder_level=:reorder_level, reserved_stock=:reserved_stock, min_stock_level=:min_stock_level, barcode=:barcode,
+                image_path=:image_path, is_active=:is_active WHERE id=:id';
         $stmt = $this->db->prepare($sql);
         $stmt->execute($data);
     }
