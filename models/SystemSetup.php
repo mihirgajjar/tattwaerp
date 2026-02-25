@@ -146,6 +146,7 @@ class SystemSetup
 
     private function ensureBusinessColumns(): void
     {
+        $this->ensureProductsCategoryIsFlexible();
         $this->ensureColumn('products', 'image_path', 'VARCHAR(255) NULL');
         $this->ensureColumn('products', 'barcode', 'VARCHAR(100) NULL');
         $this->ensureColumn('products', 'reserved_stock', 'INT NOT NULL DEFAULT 0');
@@ -193,6 +194,20 @@ class SystemSetup
             payload TEXT,
             created_at DATETIME NOT NULL
         ) ENGINE=InnoDB');
+    }
+
+    private function ensureProductsCategoryIsFlexible(): void
+    {
+        $stmt = $this->db->query("SHOW COLUMNS FROM products LIKE 'category'");
+        $col = $stmt ? $stmt->fetch() : null;
+        if (!$col) {
+            return;
+        }
+
+        $type = strtolower((string)($col['Type'] ?? ''));
+        if (str_starts_with($type, 'enum(')) {
+            $this->run('ALTER TABLE products MODIFY category VARCHAR(100) NOT NULL');
+        }
     }
 
     private function seedDefaults(): void

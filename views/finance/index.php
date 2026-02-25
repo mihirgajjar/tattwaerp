@@ -12,6 +12,7 @@
     <section class="card">
         <h3>Record Payment Received</h3>
         <form method="post" action="index.php?route=finance/receive" class="form-grid">
+        <?= csrf_field() ?>
             <label>Invoice
                 <select name="sale_id" required>
                     <?php foreach ($sales as $s): ?><option value="<?= (int)$s['id'] ?>"><?= e($s['invoice_no']) ?> (<?= e($s['customer_name']) ?>)</option><?php endforeach; ?>
@@ -26,6 +27,7 @@
     <section class="card">
         <h3>Record Payment Made</h3>
         <form method="post" action="index.php?route=finance/pay" class="form-grid">
+        <?= csrf_field() ?>
             <label>Supplier
                 <select name="supplier_id" required>
                     <?php foreach ($suppliers as $s): ?><option value="<?= (int)$s['id'] ?>"><?= e($s['name']) ?></option><?php endforeach; ?>
@@ -46,6 +48,7 @@
 <section class="card">
     <h3>Bank Details + UPI/QR</h3>
     <form method="post" action="index.php?route=finance/addBank" enctype="multipart/form-data" class="form-grid">
+        <?= csrf_field() ?>
         <label>Bank Name<input type="text" name="bank_name" required></label>
         <label>Account Name<input type="text" name="account_name" required></label>
         <label>Account No<input type="text" name="account_no" required></label>

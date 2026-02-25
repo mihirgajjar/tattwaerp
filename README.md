@@ -42,6 +42,7 @@ Lightweight web-based Invoice, Sales, Purchase and Inventory Management System u
 - Finance module: payment received/made, partial payment support, bank account + UPI/QR setup
 - Sales enhancements: draft/final/cancel status, lock after final, discounts, round-off, notes/terms, payment status
 - Purchase enhancements: draft/final, transport/other charges
+- Auto-generate purchase from uploaded CSV/XLSX and best-effort PDF/Image text extraction
 - Customer/Supplier dashboard and ledger views
 - Dashboard improvements: today sales, monthly revenue, receivables, payables, low stock, top products
 - Delete vs deactivate rule support (draft invoice deletion restricted)
@@ -93,3 +94,25 @@ Important GST rule in system:
 - PDF export is browser print-to-PDF from invoice screen.
 - CSV exports are available in Reports screen.
 - Additional compliance CSV is available in Smart Ops.
+
+## Safe Live Upgrade (Non-Technical)
+Use this process whenever new code is uploaded to live hosting.
+
+1. Take backup first:
+   - Export database from phpMyAdmin.
+2. Upload new code files to server.
+3. Login as admin.
+4. Open Migration Center:
+   - `index.php?route=migration/index`
+5. Click `Run Pending Migrations`.
+6. Check success message and verify key pages.
+
+If your live DB already has the same structure (manual past changes):
+1. Open Migration Center.
+2. Click `Mark Baseline (No SQL Run)` once.
+3. Future releases: use only `Run Pending Migrations`.
+
+Developer/CLI options:
+- `php migrate.php status` (see pending)
+- `php migrate.php run` (apply pending)
+- `php migrate.php baseline` (mark all as applied)

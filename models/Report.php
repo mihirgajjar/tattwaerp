@@ -11,7 +11,11 @@ class Report
 
     public function sales(string $from, string $to): array
     {
-        $stmt = $this->db->prepare('SELECT s.*, c.name AS customer_name FROM sales s JOIN customers c ON c.id = s.customer_id WHERE s.date BETWEEN :from AND :to ORDER BY s.date DESC');
+        $stmt = $this->db->prepare("SELECT s.*, c.name AS customer_name
+            FROM sales s
+            JOIN customers c ON c.id = s.customer_id
+            WHERE s.date BETWEEN :from AND :to AND s.status = 'FINAL'
+            ORDER BY s.date DESC");
         $stmt->execute(['from' => $from, 'to' => $to]);
         return $stmt->fetchAll();
     }
@@ -31,7 +35,7 @@ class Report
                 COALESCE(SUM(sgst),0) AS sgst,
                 COALESCE(SUM(igst),0) AS igst
             FROM sales
-            WHERE DATE_FORMAT(date, '%Y-%m') = :ym
+            WHERE DATE_FORMAT(date, '%Y-%m') = :ym AND status = 'FINAL'
             UNION ALL
             SELECT
                 'Purchases' AS type,
@@ -46,7 +50,9 @@ class Report
 
     public function profit(string $from, string $to): array
     {
-        $salesStmt = $this->db->prepare('SELECT COALESCE(SUM(total_amount),0) AS total FROM sales WHERE date BETWEEN :from AND :to');
+        $salesStmt = $this->db->prepare("SELECT COALESCE(SUM(total_amount),0) AS total
+            FROM sales
+            WHERE date BETWEEN :from AND :to AND status = 'FINAL'");
         $salesStmt->execute(['from' => $from, 'to' => $to]);
         $sales = (float)$salesStmt->fetch()['total'];
 

@@ -24,6 +24,7 @@
 <section class="card">
     <h3>Add / Update Record</h3>
     <form method="post" action="index.php?route=master/save" class="form-grid">
+        <?= csrf_field() ?>
         <input type="hidden" name="table" value="<?= e($table) ?>">
         <input type="hidden" name="id" value="<?= (int)($editing['id'] ?? 0) ?>">
         <label>Name<input type="text" name="name" value="<?= e($editing['name'] ?? '') ?>" required></label>
@@ -70,11 +71,20 @@
                 <td>
                     <a href="index.php?route=master/index&table=<?= e($table) ?>&edit_id=<?= (int)$r['id'] ?>">Edit</a> |
                     <?php if (array_key_exists('is_active', $r)): ?>
-                        <a href="index.php?route=master/deactivate&table=<?= e($table) ?>&id=<?= (int)$r['id'] ?>&active=<?= (int)$r['is_active'] === 1 ? 0 : 1 ?>">
-                            <?= (int)$r['is_active'] === 1 ? 'Deactivate' : 'Activate' ?>
-                        </a> |
+                        <form method="post" action="index.php?route=master/deactivate" style="display:inline;">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="table" value="<?= e($table) ?>">
+                            <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+                            <input type="hidden" name="active" value="<?= (int)$r['is_active'] === 1 ? 0 : 1 ?>">
+                            <button type="submit"><?= (int)$r['is_active'] === 1 ? 'Deactivate' : 'Activate' ?></button>
+                        </form> |
                     <?php endif; ?>
-                    <a href="index.php?route=master/delete&table=<?= e($table) ?>&id=<?= (int)$r['id'] ?>" onclick="return confirm('Delete record?')">Delete</a>
+                    <form method="post" action="index.php?route=master/delete" style="display:inline;" onsubmit="return confirm('Delete record?')">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="table" value="<?= e($table) ?>">
+                        <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+                        <button type="submit" class="danger-btn">Delete</button>
+                    </form>
                 </td>
             </tr>
         <?php endforeach; ?>

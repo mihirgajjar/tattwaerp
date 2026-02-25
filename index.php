@@ -31,6 +31,16 @@ try {
 $route = $_GET['route'] ?? 'dashboard/index';
 [$controllerName, $action] = array_pad(explode('/', $route), 2, 'index');
 
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    $csrf = (string)($_POST['_csrf'] ?? '');
+    if (!csrf_validate($csrf)) {
+        http_response_code(403);
+        flash('error', 'Your session expired or CSRF token is invalid. Please retry.');
+        $fallback = Auth::check() ? 'dashboard/index' : 'auth/login';
+        redirect($fallback);
+    }
+}
+
 try {
     $requestKeys = array_values(array_filter(array_keys($_REQUEST), static fn($k) => !in_array($k, ['password', 'current_password', 'new_password', 'confirm_password'], true)));
     audit_log('request', 'route', 0, [

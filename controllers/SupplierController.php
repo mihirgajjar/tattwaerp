@@ -67,6 +67,7 @@ class SupplierController extends Controller
     public function delete(): void
     {
         $this->requirePermission('master_edit', 'delete');
+        $this->requirePost('supplier/index');
         $id = (int)$this->request('id', 0);
 
         if ($id <= 0) {

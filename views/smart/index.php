@@ -61,6 +61,7 @@
     <div class="card">
         <h3>Batch + Expiry Tracking (FEFO)</h3>
         <form method="post" class="form-grid" action="index.php?route=smart/index">
+        <?= csrf_field() ?>
             <input type="hidden" name="action" value="add_batch">
             <label>Product
                 <select name="product_id" required>
@@ -91,6 +92,7 @@
     <div class="card">
         <h3>Credit Control + Ageing</h3>
         <form method="post" class="form-grid" action="index.php?route=smart/index">
+        <?= csrf_field() ?>
             <input type="hidden" name="action" value="record_payment">
             <label>Invoice
                 <select name="sale_id" required>
@@ -118,6 +120,7 @@
     <div class="card">
         <h3>Purchase Optimization (Supplier Rates)</h3>
         <form method="post" class="form-grid" action="index.php?route=smart/index">
+        <?= csrf_field() ?>
             <input type="hidden" name="action" value="save_supplier_rate">
             <label>Product
                 <select name="product_id" required>
@@ -145,6 +148,7 @@
     <div class="card">
         <h3>Multi Price Lists</h3>
         <form method="post" class="form-grid" action="index.php?route=smart/index">
+        <?= csrf_field() ?>
             <input type="hidden" name="action" value="create_price_list">
             <label>List Name<input type="text" name="name" required></label>
             <label>Channel
@@ -153,6 +157,7 @@
             <button type="submit">Create Price List</button>
         </form>
         <form method="post" class="form-grid" action="index.php?route=smart/index">
+        <?= csrf_field() ?>
             <input type="hidden" name="action" value="add_price_item">
             <label>Price List
                 <select name="price_list_id" required>
@@ -174,12 +179,14 @@
     <div class="card">
         <h3>Multi-Warehouse + Transfer</h3>
         <form method="post" class="form-grid" action="index.php?route=smart/index">
+        <?= csrf_field() ?>
             <input type="hidden" name="action" value="add_warehouse">
             <label>Name<input type="text" name="name" required></label>
             <label>State<input type="text" name="state" required></label>
             <button type="submit">Add Warehouse</button>
         </form>
         <form method="post" class="form-grid" action="index.php?route=smart/index">
+        <?= csrf_field() ?>
             <input type="hidden" name="action" value="transfer_stock">
             <label>Product
                 <select name="product_id" required>
@@ -212,6 +219,7 @@
     <div class="card">
         <h3>Returns / Credit Notes</h3>
         <form method="post" class="form-grid" action="index.php?route=smart/index">
+        <?= csrf_field() ?>
             <input type="hidden" name="action" value="create_return">
             <label>Sale Invoice
                 <select name="sale_id" required>
@@ -245,6 +253,7 @@
     <div class="card">
         <h3>Approvals Workflow</h3>
         <form method="post" class="form-grid" action="index.php?route=smart/index">
+        <?= csrf_field() ?>
             <input type="hidden" name="action" value="create_approval">
             <label>Type
                 <select name="approval_type"><option>DISCOUNT</option><option>MANUAL_STOCK_ADJUSTMENT</option><option>LOW_MARGIN_SALE</option></select>
@@ -264,12 +273,14 @@
                     <td>
                         <?php if ($a['status'] === 'PENDING'): ?>
                             <form method="post" action="index.php?route=smart/index" style="display:inline;">
+        <?= csrf_field() ?>
                                 <input type="hidden" name="action" value="review_approval">
                                 <input type="hidden" name="approval_id" value="<?= (int)$a['id'] ?>">
                                 <input type="hidden" name="status" value="APPROVED">
                                 <button type="submit">Approve</button>
                             </form>
                             <form method="post" action="index.php?route=smart/index" style="display:inline;">
+        <?= csrf_field() ?>
                                 <input type="hidden" name="action" value="review_approval">
                                 <input type="hidden" name="approval_id" value="<?= (int)$a['id'] ?>">
                                 <input type="hidden" name="status" value="REJECTED">
@@ -286,6 +297,7 @@
     <div class="card">
         <h3>Automation + Notifications</h3>
         <form method="post" action="index.php?route=smart/index">
+        <?= csrf_field() ?>
             <input type="hidden" name="action" value="run_notifications">
             <button type="submit">Queue Daily Summary</button>
         </form>

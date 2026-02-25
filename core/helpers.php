@@ -111,3 +111,30 @@ function number_to_words_indian(float $amount): string
 
     return $rupees . ' rupees only';
 }
+
+function csrf_token(): string
+{
+    if (empty($_SESSION['_csrf_token']) || !is_string($_SESSION['_csrf_token'])) {
+        $_SESSION['_csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['_csrf_token'];
+}
+
+function csrf_field(): string
+{
+    return '<input type="hidden" name="_csrf" value="' . e(csrf_token()) . '">';
+}
+
+function csrf_validate(?string $token): bool
+{
+    if (!is_string($token) || $token === '') {
+        return false;
+    }
+
+    $sessionToken = $_SESSION['_csrf_token'] ?? '';
+    if (!is_string($sessionToken) || $sessionToken === '') {
+        return false;
+    }
+
+    return hash_equals($sessionToken, $token);
+}

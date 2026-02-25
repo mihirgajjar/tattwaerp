@@ -12,6 +12,7 @@
     <?php if ($msg = flash('error')): ?><div class="alert error"><?= e($msg) ?></div><?php endif; ?>
     <?php if ($msg = flash('success')): ?><div class="alert success"><?= e($msg) ?></div><?php endif; ?>
     <form method="post" action="index.php?route=auth/changePassword">
+        <?= csrf_field() ?>
         <label>Current Password</label>
         <input type="password" name="current_password" required>
         <label>New Password</label>

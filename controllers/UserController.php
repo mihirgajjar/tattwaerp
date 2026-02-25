@@ -30,7 +30,7 @@ class UserController extends Controller
         $password = (string)$this->request('password', '');
         $roleId = (int)$this->request('role_id', 0);
 
-        if ($username === '' || $email === '' || $roleId <= 0) {
+        if ($username === '' || $email === '' || $roleId <= 0 || $password === '') {
             flash('error', 'Username, email, role and password are required.');
             redirect('user/index');
         }
@@ -88,6 +88,7 @@ class UserController extends Controller
     public function toggleActive(): void
     {
         $this->requirePermission('user_manage', 'write');
+        $this->requirePost('user/index');
         $id = (int)$this->request('id', 0);
         $active = (int)$this->request('active', 1) === 1;
         if ($id > 0) {
@@ -107,6 +108,10 @@ class UserController extends Controller
 
         $id = (int)$this->request('id', 0);
         $password = (string)$this->request('new_password', '');
+        if ($id <= 0) {
+            flash('error', 'Invalid user.');
+            redirect('user/index');
+        }
         $policyError = validate_password_policy($password);
         if ($policyError) {
             flash('error', $policyError);

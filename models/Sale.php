@@ -59,16 +59,12 @@ class Sale
                         VALUES (:sale_id, :product_id, :quantity, :rate, :gst_percent, :tax_amount, :total, :discount_amount)';
             $itemStmt = $this->db->prepare($itemSql);
 
-            $stockStmt = $this->db->prepare('UPDATE products SET stock_quantity = stock_quantity - :qty WHERE id = :id AND stock_quantity >= :qty');
-
             foreach ($items as $item) {
                 $item['sale_id'] = $saleId;
                 $itemStmt->execute($item);
-
-                $stockStmt->execute(['qty' => $item['quantity'], 'id' => $item['product_id']]);
-                if ($stockStmt->rowCount() === 0) {
-                    throw new RuntimeException('Insufficient stock for product ID ' . $item['product_id']);
-                }
+            }
+            if (strtoupper((string)$header['status']) === 'FINAL') {
+                $this->applyStockOut($items);
             }
 
             $this->db->commit();
@@ -81,9 +77,45 @@ class Sale
 
     public function setStatus(int $id, string $status): void
     {
-        $isLocked = strtoupper($status) === 'FINAL' ? 1 : 0;
-        $stmt = $this->db->prepare('UPDATE sales SET status = :s, is_locked = :l WHERE id = :id');
-        $stmt->execute(['s' => $status, 'l' => $isLocked, 'id' => $id]);
+        $stmt = $this->db->prepare('SELECT status FROM sales WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        $sale = $stmt->fetch();
+        if (!$sale) {
+            throw new RuntimeException('Sale not found.');
+        }
+
+        $oldStatus = strtoupper((string)$sale['status']);
+        $newStatus = strtoupper($status);
+        if ($oldStatus === $newStatus) {
+            return;
+        }
+        if (!in_array($newStatus, ['DRAFT', 'FINAL', 'CANCELLED', 'VOID'], true)) {
+            throw new RuntimeException('Invalid sale status.');
+        }
+
+        $itemStmt = $this->db->prepare('SELECT product_id, quantity FROM sale_items WHERE sale_id = :id');
+        $itemStmt->execute(['id' => $id]);
+        $items = $itemStmt->fetchAll();
+
+        $this->db->beginTransaction();
+        try {
+            if ($oldStatus !== 'FINAL' && $newStatus === 'FINAL') {
+                $this->applyStockOut($items);
+            }
+
+            if ($oldStatus === 'FINAL' && in_array($newStatus, ['DRAFT', 'CANCELLED', 'VOID'], true)) {
+                $this->reverseStockOut($items);
+            }
+
+            $isLocked = $newStatus === 'FINAL' ? 1 : 0;
+            $upd = $this->db->prepare('UPDATE sales SET status = :s, is_locked = :l WHERE id = :id');
+            $upd->execute(['s' => $newStatus, 'l' => $isLocked, 'id' => $id]);
+
+            $this->db->commit();
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 
     public function deleteIfUnpaidAndAllowedStatus(int $id): bool
@@ -105,5 +137,30 @@ class Sale
         $del = $this->db->prepare('DELETE FROM sales WHERE id = :id');
         $del->execute(['id' => $id]);
         return $del->rowCount() > 0;
+    }
+
+    private function applyStockOut(array $items): void
+    {
+        $stockStmt = $this->db->prepare('UPDATE products SET stock_quantity = stock_quantity - :qty WHERE id = :id AND stock_quantity >= :qty');
+        foreach ($items as $item) {
+            $stockStmt->execute([
+                'qty' => (int)$item['quantity'],
+                'id' => (int)$item['product_id'],
+            ]);
+            if ($stockStmt->rowCount() === 0) {
+                throw new RuntimeException('Insufficient stock for product ID ' . (int)$item['product_id']);
+            }
+        }
+    }
+
+    private function reverseStockOut(array $items): void
+    {
+        $stockStmt = $this->db->prepare('UPDATE products SET stock_quantity = stock_quantity + :qty WHERE id = :id');
+        foreach ($items as $item) {
+            $stockStmt->execute([
+                'qty' => (int)$item['quantity'],
+                'id' => (int)$item['product_id'],
+            ]);
+        }
     }
 }

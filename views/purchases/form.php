@@ -1,19 +1,27 @@
-<h2>Create Purchase</h2>
-<form method="post" action="index.php?route=purchase/create" class="card">
+<?php
+$purchase = $purchase ?? null;
+$existingItems = $existingItems ?? [];
+?>
+<h2><?= e($title ?? 'Create Purchase') ?></h2>
+<form method="post" action="index.php?route=<?= e($formAction ?? 'purchase/create') ?>" class="card">
+    <?= csrf_field() ?>
     <div class="grid three">
         <label>Purchase Invoice No<input type="text" name="purchase_invoice_no" value="<?= e($invoiceNo) ?>" readonly></label>
-        <label>Date<input type="date" name="date" value="<?= date('Y-m-d') ?>" required></label>
+        <label>Date<input type="date" name="date" value="<?= e((string)($purchase['date'] ?? date('Y-m-d'))) ?>" required></label>
         <label>Status
             <select name="status">
-                <option value="DRAFT">Draft</option>
-                <option value="FINAL" selected>Final</option>
+                <?php $statusVal = strtoupper((string)($purchase['status'] ?? 'FINAL')); ?>
+                <option value="DRAFT" <?= $statusVal === 'DRAFT' ? 'selected' : '' ?>>Draft</option>
+                <option value="FINAL" <?= $statusVal === 'FINAL' ? 'selected' : '' ?>>Final</option>
             </select>
         </label>
         <label>Supplier
             <select name="supplier_id" id="partySelect" data-party-kind="supplier" required>
                 <option value="">Select</option>
                 <?php foreach ($suppliers as $s): ?>
-                    <option value="<?= (int)$s['id'] ?>" data-state="<?= e($s['state']) ?>"><?= e($s['name']) ?> (<?= e($s['state']) ?>)</option>
+                    <option value="<?= (int)$s['id'] ?>" data-state="<?= e($s['state']) ?>" <?= (int)($purchase['supplier_id'] ?? 0) === (int)$s['id'] ? 'selected' : '' ?>>
+                        <?= e($s['name']) ?> (<?= e($s['state']) ?>)
+                    </option>
                 <?php endforeach; ?>
             </select>
         </label>
@@ -35,12 +43,15 @@
         <p>Grand Total: <strong id="grandTotal">0.00</strong></p>
     </div>
     <div class="grid two">
-        <label>Transport Cost<input type="number" step="0.01" name="transport_cost" value="0"></label>
-        <label>Other Charges<input type="number" step="0.01" name="other_charges" value="0"></label>
+        <label>Transport Cost<input type="number" step="0.01" name="transport_cost" value="<?= e((string)($purchase['transport_cost'] ?? '0')) ?>"></label>
+        <label>Other Charges<input type="number" step="0.01" name="other_charges" value="<?= e((string)($purchase['other_charges'] ?? '0')) ?>"></label>
     </div>
-    <button type="submit">Save Purchase</button>
+    <button type="submit"><?= e($submitLabel ?? 'Save Purchase') ?></button>
 </form>
 
 <script>
 window.PRODUCTS = <?= json_encode($products, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?>;
+window.EXISTING_ITEMS = <?= json_encode($existingItems, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) ?>;
+window.EXISTING_PARTY_ID = <?= json_encode((int)($purchase['supplier_id'] ?? 0)) ?>;
+window.EXISTING_PARTY_STATE = <?= json_encode((string)($purchase['party_state'] ?? '')) ?>;
 </script>

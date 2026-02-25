@@ -4,8 +4,9 @@ $product = $product ?? [];
 ?>
 <h2><?= $product ? 'Edit Product' : 'Add Product' ?></h2>
 <form method="post" enctype="multipart/form-data" class="card form-grid" action="index.php?route=product/<?= e($action) ?>">
+    <?= csrf_field() ?>
     <label>Product Name<input type="text" name="product_name" value="<?= e(old('product_name', $product['product_name'] ?? '')) ?>" required></label>
-    <label>SKU<input type="text" name="sku" value="<?= e(old('sku', $product['sku'] ?? '')) ?>" required></label>
+    <label>SKU (optional, auto-generated if blank)<input type="text" name="sku" placeholder="Auto generated if left blank" value="<?= e(old('sku', $product['sku'] ?? '')) ?>"></label>
     <label>Category
         <select name="category" required>
             <?php foreach ($categories as $c): ?>

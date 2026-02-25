@@ -59,18 +59,28 @@ class FinanceController extends Controller
     public function receive(): void
     {
         $this->requirePermission('financial_report_view', 'write');
-        (new Finance())->recordReceived((int)$this->request('sale_id', 0), (float)$this->request('amount', 0), (string)$this->request('payment_mode', 'UPI'));
-        audit_log('record_payment_received', 'customer_payments', 0);
-        flash('success', 'Payment received recorded.');
+        $this->requirePost('finance/index');
+        try {
+            (new Finance())->recordReceived((int)$this->request('sale_id', 0), (float)$this->request('amount', 0), (string)$this->request('payment_mode', 'UPI'));
+            audit_log('record_payment_received', 'customer_payments', 0);
+            flash('success', 'Payment received recorded.');
+        } catch (Throwable $e) {
+            flash('error', $e->getMessage());
+        }
         redirect('finance/index');
     }
 
     public function pay(): void
     {
         $this->requirePermission('financial_report_view', 'write');
-        (new Finance())->recordPaid((int)$this->request('supplier_id', 0), (int)$this->request('purchase_id', 0), (float)$this->request('amount', 0), (string)$this->request('payment_mode', 'Bank Transfer'));
-        audit_log('record_payment_made', 'customer_payables', 0);
-        flash('success', 'Payment made recorded.');
+        $this->requirePost('finance/index');
+        try {
+            (new Finance())->recordPaid((int)$this->request('supplier_id', 0), (int)$this->request('purchase_id', 0), (float)$this->request('amount', 0), (string)$this->request('payment_mode', 'Bank Transfer'));
+            audit_log('record_payment_made', 'customer_payables', 0);
+            flash('success', 'Payment made recorded.');
+        } catch (Throwable $e) {
+            flash('error', $e->getMessage());
+        }
         redirect('finance/index');
     }
 }

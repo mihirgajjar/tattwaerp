@@ -34,10 +34,18 @@ $currentRoute = $_GET['route'] ?? 'dashboard/index';
             <?php if (Auth::can('user_manage', 'read')): ?>
                 <a class="<?= str_starts_with($currentRoute, 'user/') ? 'active' : '' ?>" href="index.php?route=user/index">Users</a>
             <?php endif; ?>
+            <?php if (Auth::can('user_manage', 'write')): ?>
+                <a class="<?= str_starts_with($currentRoute, 'migration/') ? 'active' : '' ?>" href="index.php?route=migration/index">Migration Center</a>
+            <?php endif; ?>
             <a class="<?= str_starts_with($currentRoute, 'smart/') ? 'active' : '' ?>" href="index.php?route=smart/index">Smart Ops</a>
             <a class="<?= str_starts_with($currentRoute, 'setting/') ? 'active' : '' ?>" href="index.php?route=setting/index">Settings</a>
             <a class="<?= str_starts_with($currentRoute, 'auth/changePassword') ? 'active' : '' ?>" href="index.php?route=auth/changePassword">Change Password</a>
-            <a href="index.php?route=auth/logout">Logout (<?= e($user['username'] ?? 'admin') ?>)</a>
+            <form method="post" action="index.php?route=auth/logout">
+                <?= csrf_field() ?>
+                <button type="submit" style="width:100%; text-align:left; background:none; border:none; color:#d7f0e8; padding:10px; border-radius:10px; cursor:pointer;">
+                    Logout (<?= e($user['username'] ?? 'admin') ?>)
+                </button>
+            </form>
         </nav>
     </aside>
     <main class="content">

@@ -1,7 +1,14 @@
 <h2>Invoice Settings</h2>
 <section class="card">
+    <h3>Database Upgrade</h3>
+    <p class="muted">Use Migration Center for safe, incremental live upgrades without data loss.</p>
+    <a class="btn" href="index.php?route=migration/index">Open Migration Center</a>
+</section>
+
+<section class="card">
     <h3>Invoice Theme</h3>
     <form method="post" action="index.php?route=setting/index" class="form-grid">
+        <?= csrf_field() ?>
         <input type="hidden" name="action" value="save_invoice_theme">
         <label>Theme
             <select name="invoice_theme" required>
@@ -23,6 +30,7 @@
     <h3>Upload Invoice Logo</h3>
     <p class="muted">Allowed: PNG, JPG, WEBP. Max size: 2 MB.</p>
     <form method="post" action="index.php?route=setting/index" enctype="multipart/form-data" class="form-grid">
+        <?= csrf_field() ?>
         <input type="hidden" name="action" value="upload_logo">
         <label>Invoice Logo<input type="file" name="invoice_logo" accept="image/png,image/jpeg,image/webp" required></label>
         <div>

@@ -21,6 +21,7 @@
     <section class="card">
         <h3>Add User</h3>
         <form method="post" action="index.php?route=user/create" class="form-grid">
+        <?= csrf_field() ?>
             <label>Username<input type="text" name="username" required></label>
             <label>Email<input type="email" name="email" required></label>
             <label>Password<input type="password" name="password" required></label>
@@ -49,6 +50,7 @@
                     <td><?= (int)$u['is_active'] === 1 ? 'Active' : 'Inactive' ?></td>
                     <td>
                         <form method="post" action="index.php?route=user/update" style="display:inline;">
+        <?= csrf_field() ?>
                             <input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
                             <input type="hidden" name="username" value="<?= e($u['username']) ?>">
                             <input type="hidden" name="email" value="<?= e($u['email']) ?>">
@@ -57,6 +59,7 @@
                             <button type="submit"><?= (int)$u['is_active'] === 1 ? 'Deactivate' : 'Activate' ?></button>
                         </form>
                         <form method="post" action="index.php?route=user/resetPassword" style="display:inline;">
+        <?= csrf_field() ?>
                             <input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
                             <input type="hidden" name="new_password" value="Temp@1234">
                             <button class="secondary" type="submit">Reset Password</button>

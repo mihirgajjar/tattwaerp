@@ -17,6 +17,7 @@
         <div class="alert success"><?= e($msg) ?></div>
     <?php endif; ?>
     <form method="post" action="index.php?route=auth/login">
+        <?= csrf_field() ?>
         <label>Email or Username</label>
         <input type="text" name="identifier" value="<?= e(old('identifier')) ?>" required>
         <label>Password</label>

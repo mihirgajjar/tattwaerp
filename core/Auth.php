@@ -17,6 +17,7 @@ class Auth
             return false;
         }
 
+        session_regenerate_id(true);
         $roleId = (int)($user['role_id'] ?? 0);
         $_SESSION['user'] = [
             'id' => (int)$user['id'],

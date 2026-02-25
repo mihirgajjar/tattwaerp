@@ -73,6 +73,65 @@ class Purchase
         }
     }
 
+    public function updateDraft(int $id, array $header, array $items): void
+    {
+        $purchase = $this->find($id);
+        if (!$purchase) {
+            throw new RuntimeException('Purchase not found.');
+        }
+
+        $oldStatus = strtoupper((string)$purchase['status']);
+        if ($oldStatus !== 'DRAFT') {
+            throw new RuntimeException('Only draft purchases can be edited.');
+        }
+
+        $newStatus = strtoupper((string)$header['status']);
+        if (!in_array($newStatus, ['DRAFT', 'FINAL'], true)) {
+            throw new RuntimeException('Invalid purchase status.');
+        }
+
+        $this->db->beginTransaction();
+        try {
+            $sql = 'UPDATE purchases
+                    SET purchase_invoice_no = :purchase_invoice_no,
+                        supplier_id = :supplier_id,
+                        date = :date,
+                        subtotal = :subtotal,
+                        cgst = :cgst,
+                        sgst = :sgst,
+                        igst = :igst,
+                        total_amount = :total_amount,
+                        status = :status,
+                        transport_cost = :transport_cost,
+                        other_charges = :other_charges
+                    WHERE id = :id';
+            $params = $header;
+            $params['id'] = $id;
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+
+            $delItems = $this->db->prepare('DELETE FROM purchase_items WHERE purchase_id = :id');
+            $delItems->execute(['id' => $id]);
+
+            $itemSql = 'INSERT INTO purchase_items (purchase_id, product_id, quantity, rate, gst_percent, tax_amount, total)
+                        VALUES (:purchase_id, :product_id, :quantity, :rate, :gst_percent, :tax_amount, :total)';
+            $itemStmt = $this->db->prepare($itemSql);
+            foreach ($items as $item) {
+                $item['purchase_id'] = $id;
+                $itemStmt->execute($item);
+            }
+
+            if ($newStatus === 'FINAL') {
+                $this->applyStockIn($items);
+            }
+
+            $this->db->commit();
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
     public function setStatus(int $id, string $newStatus): void
     {
         $purchase = $this->find($id);

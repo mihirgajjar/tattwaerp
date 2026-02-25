@@ -16,10 +16,24 @@
             <td>
                 <a href="index.php?route=sale/invoice&id=<?= (int)$s['id'] ?>" target="_blank">Print</a>
                 <?php if (($s['status'] ?? 'FINAL') !== 'FINAL'): ?> |
-                    <a href="index.php?route=sale/status&id=<?= (int)$s['id'] ?>&status=FINAL">Finalize</a>
+                    <form method="post" action="index.php?route=sale/status" style="display:inline;">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
+                        <input type="hidden" name="status" value="FINAL">
+                        <button type="submit">Finalize</button>
+                    </form>
                 <?php endif; ?> |
-                <a href="index.php?route=sale/status&id=<?= (int)$s['id'] ?>&status=CANCELLED">Cancel</a> |
-                <a href="index.php?route=sale/delete&id=<?= (int)$s['id'] ?>" onclick="return confirm('Delete this draft/cancelled/void invoice (only if no payment)?')">Delete</a>
+                <form method="post" action="index.php?route=sale/status" style="display:inline;">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
+                    <input type="hidden" name="status" value="CANCELLED">
+                    <button type="submit">Cancel</button>
+                </form> |
+                <form method="post" action="index.php?route=sale/delete" style="display:inline;" onsubmit="return confirm('Delete this draft/cancelled/void invoice (only if no payment)?')">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
+                    <button type="submit" class="danger-btn">Delete</button>
+                </form>
             </td>
         </tr>
     <?php endforeach; ?>

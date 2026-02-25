@@ -21,6 +21,7 @@
     <section class="card">
         <h3><?= $isEdit ? 'Edit Supplier' : 'Add Supplier' ?></h3>
         <form method="post" action="index.php?route=supplier/<?= $isEdit ? 'update' : 'create' ?>" class="form-grid">
+            <?= csrf_field() ?>
             <?php if ($isEdit): ?><input type="hidden" name="id" value="<?= (int)$editing['id'] ?>"><?php endif; ?>
             <label>Name<input type="text" name="name" value="<?= e($editing['name'] ?? '') ?>" required></label>
             <label>Supplier Type<input type="text" name="supplier_type" value="<?= e($editing['supplier_type'] ?? '') ?>"></label>
@@ -56,7 +57,11 @@
                     <td>
                         <a href="index.php?route=supplier/dashboard&id=<?= (int)$s['id'] ?>">Dashboard</a> |
                         <a href="index.php?route=supplier/index&edit_id=<?= (int)$s['id'] ?>">Edit</a> |
-                        <a href="index.php?route=supplier/delete&id=<?= (int)$s['id'] ?>" onclick="return confirm('Delete this supplier?')">Delete</a>
+                        <form method="post" action="index.php?route=supplier/delete" style="display:inline;" onsubmit="return confirm('Delete this supplier?')">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
+                            <button type="submit" class="danger-btn">Delete</button>
+                        </form>
                     </td>
                 </tr>
             <?php endforeach; ?>

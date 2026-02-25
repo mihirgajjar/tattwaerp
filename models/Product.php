@@ -23,6 +23,22 @@ class Product
         return $row ?: null;
     }
 
+    public function findBySku(string $sku): ?array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM products WHERE sku = :sku LIMIT 1');
+        $stmt->execute(['sku' => $sku]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function findByName(string $name): ?array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM products WHERE product_name = :name LIMIT 1');
+        $stmt->execute(['name' => $name]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
     public function create(array $data): void
     {
         $sql = 'INSERT INTO products (product_name, sku, category, variant, size, hsn_code, gst_percent, purchase_price, selling_price, stock_quantity, reorder_level, reserved_stock, min_stock_level, barcode, image_path, is_active, created_at)
@@ -74,5 +90,42 @@ class Product
                 GROUP BY p.id, p.product_name, p.sku
                 ORDER BY total_qty DESC';
         return $this->db->query($sql)->fetchAll();
+    }
+
+    public function skuExists(string $sku, int $excludeId = 0): bool
+    {
+        $sql = 'SELECT id FROM products WHERE sku = :sku';
+        $params = ['sku' => $sku];
+        if ($excludeId > 0) {
+            $sql .= ' AND id <> :id';
+            $params['id'] = $excludeId;
+        }
+        $sql .= ' LIMIT 1';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (bool)$stmt->fetch();
+    }
+
+    public function generateSku(array $data, int $excludeId = 0): string
+    {
+        $category = strtoupper(preg_replace('/[^A-Za-z]/', '', (string)($data['category'] ?? '')));
+        $variant = strtoupper(preg_replace('/[^A-Za-z]/', '', (string)($data['variant'] ?? '')));
+        $size = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string)($data['size'] ?? '')));
+
+        $catPart = substr($category !== '' ? $category : 'PRD', 0, 2);
+        $varPart = substr($variant !== '' ? $variant : 'ITEM', 0, 3);
+        $sizePart = $size !== '' ? $size : 'GEN';
+
+        $base = $catPart . '-' . $varPart . '-' . $sizePart;
+        $sku = $base;
+        $n = 1;
+
+        while ($this->skuExists($sku, $excludeId)) {
+            $sku = $base . '-' . str_pad((string)$n, 2, '0', STR_PAD_LEFT);
+            $n++;
+        }
+
+        return $sku;
     }
 }

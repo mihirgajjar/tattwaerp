@@ -59,6 +59,9 @@
     const partyStateInput = document.getElementById('partyState');
     const businessState = (document.getElementById('businessState')?.value || '').toLowerCase();
     const products = window.PRODUCTS || [];
+    const existingItems = Array.isArray(window.EXISTING_ITEMS) ? window.EXISTING_ITEMS : [];
+    const existingPartyId = parseInt(window.EXISTING_PARTY_ID || '0', 10) || 0;
+    const existingPartyState = String(window.EXISTING_PARTY_STATE || '');
     const mode = partySelect?.dataset.partyKind === 'customer' ? 'sale' : 'purchase';
 
     function buildProductOptions() {
@@ -67,19 +70,24 @@
             .join('');
     }
 
-    function addRow() {
+    function addRow(initial) {
+        const item = initial || {};
+        const selectedProductId = String(item.product_id || '');
+        const selectedGst = String(item.gst_percent || 18);
+        const qty = parseFloat(item.quantity || 1);
+        const rate = parseFloat(item.rate || 0);
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
                 <select name="product_id[]" class="product-id" required>${buildProductOptions()}</select>
             </td>
-            <td><input type="number" name="quantity[]" class="qty" min="1" value="1" required></td>
-            <td><input type="number" name="rate[]" class="rate" step="0.01" min="0" value="0" required></td>
+            <td><input type="number" name="quantity[]" class="qty" min="1" value="${Math.max(1, qty)}" required></td>
+            <td><input type="number" name="rate[]" class="rate" step="0.01" min="0" value="${rate}" required></td>
             <td>
                 <select name="gst_percent[]" class="gst" required>
-                    <option value="5">5</option>
-                    <option value="12">12</option>
-                    <option value="18">18</option>
+                    <option value="5" ${selectedGst === '5' ? 'selected' : ''}>5</option>
+                    <option value="12" ${selectedGst === '12' ? 'selected' : ''}>12</option>
+                    <option value="18" ${selectedGst === '18' ? 'selected' : ''}>18</option>
                 </select>
             </td>
             <td class="taxable">0.00</td>
@@ -87,6 +95,10 @@
             <td class="line-total">0.00</td>
             <td><button type="button" class="danger-btn remove">X</button></td>
         `;
+        const select = tr.querySelector('.product-id');
+        if (selectedProductId !== '') {
+            select.value = selectedProductId;
+        }
         body.appendChild(tr);
     }
 
@@ -126,7 +138,7 @@
         document.getElementById('grandTotal').textContent = (subtotal + cgst + sgst + igst).toFixed(2);
     }
 
-    addBtn.addEventListener('click', addRow);
+    addBtn.addEventListener('click', () => addRow());
 
     body.addEventListener('click', (e) => {
         if (e.target.classList.contains('remove')) {
@@ -158,6 +170,23 @@
         updateTotals();
     });
 
-    addRow();
+    if (existingPartyId > 0 && partySelect) {
+        partySelect.value = String(existingPartyId);
+    }
+
+    if (existingPartyState !== '' && partyStateInput) {
+        partyStateInput.value = existingPartyState;
+    } else if (partySelect && partyStateInput) {
+        const option = partySelect.options[partySelect.selectedIndex];
+        partyStateInput.value = option?.dataset.state || '';
+    }
+
+    if (existingItems.length > 0) {
+        body.innerHTML = '';
+        existingItems.forEach((item) => addRow(item));
+    } else {
+        addRow();
+    }
+
     updateTotals();
 })();

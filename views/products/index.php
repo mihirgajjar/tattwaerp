@@ -22,7 +22,11 @@
             <td><?= (int)($row['is_active'] ?? 1) === 1 ? 'Active' : 'Inactive' ?></td>
             <td>
                 <a href="index.php?route=product/edit&id=<?= (int)$row['id'] ?>">Edit</a> |
-                <a href="index.php?route=product/delete&id=<?= (int)$row['id'] ?>" onclick="return confirm('Delete this product?')">Delete</a>
+                <form method="post" action="index.php?route=product/delete" style="display:inline;" onsubmit="return confirm('Delete this product?')">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                    <button type="submit" class="danger-btn">Delete</button>
+                </form>
             </td>
         </tr>
     <?php endforeach; ?>

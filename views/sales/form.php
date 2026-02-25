@@ -1,5 +1,6 @@
 <h2>Create Sales Invoice</h2>
 <form method="post" action="index.php?route=sale/create" class="card">
+        <?= csrf_field() ?>
     <div class="grid three">
         <label>Invoice No<input type="text" name="invoice_no" value="<?= e($invoiceNo) ?>" readonly></label>
         <label>Date<input type="date" name="date" value="<?= date('Y-m-d') ?>" required></label>

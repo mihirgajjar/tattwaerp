@@ -35,6 +35,7 @@ class AuthController extends Controller
 
     public function logout(): void
     {
+        $this->requirePost('auth/login');
         Auth::logout();
         redirect('auth/login');
     }

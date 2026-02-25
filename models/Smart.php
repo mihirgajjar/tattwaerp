@@ -39,7 +39,7 @@ class Smart
                     COALESCE(SUM(CASE WHEN s.date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN si.quantity ELSE 0 END), 0) AS sold_30d
                 FROM products p
                 LEFT JOIN sale_items si ON si.product_id = p.id
-                LEFT JOIN sales s ON s.id = si.sale_id
+                LEFT JOIN sales s ON s.id = si.sale_id AND s.status = 'FINAL'
                 GROUP BY p.id
                 ORDER BY p.product_name";
         $rows = $this->db->query($sql)->fetchAll();
@@ -65,7 +65,7 @@ class Smart
                     COALESCE(SUM(CASE WHEN s.date >= DATE_SUB(CURDATE(), INTERVAL 60 DAY) THEN si.quantity ELSE 0 END), 0) AS sold_60d
                 FROM products p
                 LEFT JOIN sale_items si ON si.product_id = p.id
-                LEFT JOIN sales s ON s.id = si.sale_id
+                LEFT JOIN sales s ON s.id = si.sale_id AND s.status = 'FINAL'
                 GROUP BY p.id
                 ORDER BY p.product_name";
         $rows = $this->db->query($sql)->fetchAll();
@@ -90,7 +90,7 @@ class Smart
                 FROM sale_items si
                 JOIN sales s ON s.id = si.sale_id
                 JOIN products p ON p.id = si.product_id
-                WHERE s.date BETWEEN :from AND :to
+                WHERE s.date BETWEEN :from AND :to AND s.status = 'FINAL'
                 ORDER BY s.date DESC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['from' => $from, 'to' => $to]);
@@ -104,6 +104,7 @@ class Smart
                     DATEDIFF(CURDATE(), s.due_date) AS days_overdue
                 FROM sales s
                 JOIN customers c ON c.id = s.customer_id
+                WHERE s.status = 'FINAL'
                 ORDER BY s.date DESC";
         $rows = $this->db->query($sql)->fetchAll();
 
@@ -333,11 +334,11 @@ class Smart
 
     public function runNotifications(): void
     {
-        $sales = $this->db->query("SELECT COALESCE(SUM(total_amount),0) AS v FROM sales WHERE date = CURDATE()")->fetch()['v'];
+        $sales = $this->db->query("SELECT COALESCE(SUM(total_amount),0) AS v FROM sales WHERE date = CURDATE() AND status = 'FINAL'")->fetch()['v'];
         $due = $this->db->query("SELECT COALESCE(SUM(s.total_amount - IFNULL(p.paid,0)),0) AS v
             FROM sales s
             LEFT JOIN (SELECT sale_id, SUM(amount) AS paid FROM customer_payments GROUP BY sale_id) p ON p.sale_id = s.id
-            WHERE (s.total_amount - IFNULL(p.paid,0)) > 0")->fetch()['v'];
+            WHERE s.status = 'FINAL' AND (s.total_amount - IFNULL(p.paid,0)) > 0")->fetch()['v'];
         $low = $this->db->query('SELECT COUNT(*) AS c FROM products WHERE stock_quantity < reorder_level')->fetch()['c'];
 
         $message = 'Daily Summary: Sales Rs ' . number_format((float)$sales, 2) . ', Outstanding Rs ' . number_format((float)$due, 2) . ', Low Stock Items ' . (int)$low;
@@ -354,7 +355,7 @@ class Smart
             FROM sale_items si
             JOIN sales s ON s.id = si.sale_id
             JOIN products p ON p.id = si.product_id
-            WHERE DATE_FORMAT(s.date, '%Y-%m') = :month
+            WHERE DATE_FORMAT(s.date, '%Y-%m') = :month AND s.status = 'FINAL'
             GROUP BY p.hsn_code
             ORDER BY p.hsn_code");
         $stmt->execute(['month' => $month]);

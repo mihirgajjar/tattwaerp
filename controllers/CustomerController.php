@@ -67,6 +67,7 @@ class CustomerController extends Controller
     public function delete(): void
     {
         $this->requirePermission('master_edit', 'delete');
+        $this->requirePost('customer/index');
         $id = (int)$this->request('id', 0);
 
         if ($id <= 0) {

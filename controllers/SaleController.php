@@ -40,12 +40,19 @@ class SaleController extends Controller
     public function status(): void
     {
         $this->requirePermission('billing', 'write');
+        $this->requirePost('sale/index');
         $id = (int)$this->request('id', 0);
         $status = strtoupper(trim((string)$this->request('status', 'DRAFT')));
-        if ($id > 0 && in_array($status, ['DRAFT', 'FINAL', 'CANCELLED', 'VOID'], true)) {
-            (new Sale())->setStatus($id, $status);
-            audit_log('sale_status', 'sale', $id, ['status' => $status]);
-            flash('success', 'Sale status updated.');
+        try {
+            if ($id > 0 && in_array($status, ['DRAFT', 'FINAL', 'CANCELLED', 'VOID'], true)) {
+                (new Sale())->setStatus($id, $status);
+                audit_log('sale_status', 'sale', $id, ['status' => $status]);
+                flash('success', 'Sale status updated.');
+            } else {
+                flash('error', 'Invalid sale or status.');
+            }
+        } catch (Throwable $e) {
+            flash('error', $e->getMessage());
         }
         redirect('sale/index');
     }
@@ -53,6 +60,7 @@ class SaleController extends Controller
     public function delete(): void
     {
         $this->requirePermission('invoice_delete', 'delete');
+        $this->requirePost('sale/index');
         $id = (int)$this->request('id', 0);
         if ($id > 0 && (new Sale())->deleteIfUnpaidAndAllowedStatus($id)) {
             audit_log('delete_sale', 'sale', $id);
@@ -118,6 +126,9 @@ class SaleController extends Controller
         if ($customerId <= 0 || $invoiceNo === '' || empty($productIds)) {
             throw new RuntimeException('Required fields are missing.');
         }
+        if (!in_array($status, ['DRAFT', 'FINAL'], true)) {
+            throw new RuntimeException('Invalid sale status.');
+        }
 
         $items = [];
         $subtotal = 0.0;
@@ -132,6 +143,9 @@ class SaleController extends Controller
             $qty = max(1, (int)($quantities[$i] ?? 0));
             $rate = (float)($rates[$i] ?? 0);
             $gstPercent = (float)($gstPercents[$i] ?? 0);
+            if ($rate <= 0) {
+                throw new RuntimeException('Rate must be greater than 0 for all line items.');
+            }
 
             if (!in_array($gstPercent, [5.0, 12.0, 18.0], true)) {
                 throw new RuntimeException('Invalid GST rate selected.');

@@ -40,4 +40,13 @@ class Controller
             redirect('dashboard/index');
         }
     }
+
+    protected function requirePost(string $fallbackRoute = 'dashboard/index'): void
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            http_response_code(405);
+            flash('error', 'Invalid request method.');
+            redirect($fallbackRoute);
+        }
+    }
 }

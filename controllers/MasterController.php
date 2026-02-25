@@ -42,6 +42,7 @@ class MasterController extends Controller
     public function save(): void
     {
         $this->requirePermission('master_edit', 'write');
+        $this->requirePost('master/index');
         $table = (string)$this->request('table', '');
         $id = (int)$this->request('id', 0);
         $model = new Master();
@@ -74,6 +75,7 @@ class MasterController extends Controller
     public function deactivate(): void
     {
         $this->requirePermission('master_edit', 'write');
+        $this->requirePost('master/index');
         $table = (string)$this->request('table', '');
         $id = (int)$this->request('id', 0);
         $active = (int)$this->request('active', 1) === 1;
@@ -92,6 +94,7 @@ class MasterController extends Controller
     public function delete(): void
     {
         $this->requirePermission('master_edit', 'delete');
+        $this->requirePost('master/index');
         $table = (string)$this->request('table', '');
         $id = (int)$this->request('id', 0);
 

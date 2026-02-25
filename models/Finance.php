@@ -52,6 +52,19 @@ class Finance
 
     public function recordReceived(int $saleId, float $amount, string $mode): void
     {
+        if ($saleId <= 0) {
+            throw new RuntimeException('Invalid sale selected.');
+        }
+        if ($amount <= 0) {
+            throw new RuntimeException('Payment amount must be greater than 0.');
+        }
+
+        $saleStmt = $this->db->prepare('SELECT id FROM sales WHERE id = :id');
+        $saleStmt->execute(['id' => $saleId]);
+        if (!$saleStmt->fetch()) {
+            throw new RuntimeException('Sale not found.');
+        }
+
         $stmt = $this->db->prepare('INSERT INTO customer_payments (sale_id, amount, payment_mode, payment_date, created_at)
             VALUES (:sale_id, :amount, :payment_mode, CURDATE(), NOW())');
         $stmt->execute(['sale_id' => $saleId, 'amount' => $amount, 'payment_mode' => $mode]);
@@ -61,6 +74,23 @@ class Finance
 
     public function recordPaid(int $supplierId, int $purchaseId, float $amount, string $mode): void
     {
+        if ($supplierId <= 0 || $purchaseId <= 0) {
+            throw new RuntimeException('Supplier and purchase are required.');
+        }
+        if ($amount <= 0) {
+            throw new RuntimeException('Payment amount must be greater than 0.');
+        }
+
+        $purchaseStmt = $this->db->prepare('SELECT supplier_id FROM purchases WHERE id = :id');
+        $purchaseStmt->execute(['id' => $purchaseId]);
+        $purchase = $purchaseStmt->fetch();
+        if (!$purchase) {
+            throw new RuntimeException('Purchase not found.');
+        }
+        if ((int)$purchase['supplier_id'] !== $supplierId) {
+            throw new RuntimeException('Supplier does not match selected purchase.');
+        }
+
         $stmt = $this->db->prepare('INSERT INTO customer_payables (supplier_id, purchase_id, amount, payment_mode, payment_date, created_at)
             VALUES (:supplier_id, :purchase_id, :amount, :payment_mode, CURDATE(), NOW())');
         $stmt->execute([

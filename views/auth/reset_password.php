@@ -12,6 +12,7 @@
     <?php if ($msg = flash('error')): ?><div class="alert error"><?= e($msg) ?></div><?php endif; ?>
     <?php if ($msg = flash('success')): ?><div class="alert success"><?= e($msg) ?></div><?php endif; ?>
     <form method="post" action="index.php?route=auth/resetPassword">
+        <?= csrf_field() ?>
         <label>Token</label>
         <input type="text" name="token" value="<?= e($token ?? '') ?>" required>
         <label>New Password</label>

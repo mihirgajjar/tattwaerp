@@ -12,6 +12,7 @@
     <?php if ($msg = flash('error')): ?><div class="alert error"><?= e($msg) ?></div><?php endif; ?>
     <?php if ($msg = flash('success')): ?><div class="alert success"><?= e($msg) ?></div><?php endif; ?>
     <form method="post" action="index.php?route=auth/forgotPassword">
+        <?= csrf_field() ?>
         <label>Email or Username</label>
         <input type="text" name="identifier" required>
         <button type="submit">Generate Reset Token</button>

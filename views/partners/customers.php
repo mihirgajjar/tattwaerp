@@ -21,6 +21,7 @@
     <section class="card">
         <h3><?= $isEdit ? 'Edit Customer' : 'Add Customer' ?></h3>
         <form method="post" action="index.php?route=customer/<?= $isEdit ? 'update' : 'create' ?>" class="form-grid">
+            <?= csrf_field() ?>
             <?php if ($isEdit): ?><input type="hidden" name="id" value="<?= (int)$editing['id'] ?>"><?php endif; ?>
             <label>Name<input type="text" name="name" value="<?= e($editing['name'] ?? '') ?>" required></label>
             <label>Customer Type
@@ -66,7 +67,11 @@
                     <td>
                         <a href="index.php?route=customer/dashboard&id=<?= (int)$s['id'] ?>">Dashboard</a> |
                         <a href="index.php?route=customer/index&edit_id=<?= (int)$s['id'] ?>">Edit</a> |
-                        <a href="index.php?route=customer/delete&id=<?= (int)$s['id'] ?>" onclick="return confirm('Delete this customer?')">Delete</a>
+                        <form method="post" action="index.php?route=customer/delete" style="display:inline;" onsubmit="return confirm('Delete this customer?')">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
+                            <button type="submit" class="danger-btn">Delete</button>
+                        </form>
                     </td>
                 </tr>
             <?php endforeach; ?>

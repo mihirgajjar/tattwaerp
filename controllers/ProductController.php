@@ -16,13 +16,17 @@ class ProductController extends Controller
         $categoryOptions = $this->categoryOptions();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = $this->validatedData();
+            $data = $this->validatedData(0);
             if ($data) {
-                $model->create($data);
-                audit_log('create_product', 'product', 0, ['sku' => $data['sku']]);
-                flash('success', 'Product created.');
-                clear_old();
-                redirect('product/index');
+                try {
+                    $model->create($data);
+                    audit_log('create_product', 'product', 0, ['sku' => $data['sku']]);
+                    flash('success', 'Product created.');
+                    clear_old();
+                    redirect('product/index');
+                } catch (Throwable $e) {
+                    flash('error', $e->getMessage());
+                }
             }
             redirect('product/create');
         }
@@ -44,13 +48,17 @@ class ProductController extends Controller
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = $this->validatedData();
+            $data = $this->validatedData($id);
             if ($data) {
-                $model->update($id, $data);
-                audit_log('update_product', 'product', $id, ['sku' => $data['sku']]);
-                flash('success', 'Product updated.');
-                clear_old();
-                redirect('product/index');
+                try {
+                    $model->update($id, $data);
+                    audit_log('update_product', 'product', $id, ['sku' => $data['sku']]);
+                    flash('success', 'Product updated.');
+                    clear_old();
+                    redirect('product/index');
+                } catch (Throwable $e) {
+                    flash('error', $e->getMessage());
+                }
             }
             redirect('product/edit&id=' . $id);
         }
@@ -61,17 +69,23 @@ class ProductController extends Controller
     public function delete(): void
     {
         $this->requirePermission('inventory', 'delete');
+        $this->requirePost('product/index');
         $id = (int)$this->request('id', 0);
         if ($id > 0) {
-            (new Product())->delete($id);
-            audit_log('delete_product', 'product', $id);
-            flash('success', 'Product deleted.');
+            try {
+                (new Product())->delete($id);
+                audit_log('delete_product', 'product', $id);
+                flash('success', 'Product deleted.');
+            } catch (Throwable $e) {
+                flash('error', 'Product cannot be deleted because it is used in transactions.');
+            }
         }
         redirect('product/index');
     }
 
-    private function validatedData(): ?array
+    private function validatedData(int $excludeId = 0): ?array
     {
+        $productModel = new Product();
         $data = [
             'product_name' => trim((string)$this->request('product_name', '')),
             'sku' => trim((string)$this->request('sku', '')),
@@ -93,8 +107,17 @@ class ProductController extends Controller
 
         set_old($data);
 
-        if ($data['product_name'] === '' || $data['sku'] === '') {
-            flash('error', 'Product name and SKU are required.');
+        if ($data['product_name'] === '') {
+            flash('error', 'Product name is required.');
+            return null;
+        }
+
+        if ($data['sku'] === '') {
+            $data['sku'] = $productModel->generateSku($data, $excludeId);
+        }
+
+        if ($productModel->skuExists($data['sku'], $excludeId)) {
+            flash('error', 'SKU already exists. Please use a different SKU.');
             return null;
         }
 
